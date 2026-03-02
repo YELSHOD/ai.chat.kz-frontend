@@ -24,6 +24,7 @@ function App() {
 
   const [newProjectTitle, setNewProjectTitle] = useState('')
   const [newChatTitle, setNewChatTitle] = useState('')
+  const [chatSearchQuery, setChatSearchQuery] = useState('')
   const [newMessageContent, setNewMessageContent] = useState('')
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
 
@@ -98,12 +99,22 @@ function App() {
     }
   }
 
-  async function handleCreateChat(event) {
-    event.preventDefault()
+  async function cleanupEmptySelectedChat() {
+    const currentChatId = workspace.selectedChatId
+    if (!currentChatId || workspace.streaming) return
+
+    const hasMessages = await workspace.chatHasMessages(currentChatId)
+    if (!hasMessages) {
+      await workspace.deleteChat(currentChatId)
+    }
+  }
+
+  async function createChatWithFeedback(title) {
     setLoading(true)
     clearFeedback()
     try {
-      await workspace.createChat(newChatTitle)
+      await cleanupEmptySelectedChat()
+      await workspace.createChat(title)
       setNewChatTitle('')
       setNotice('Chat created')
     } catch (e) {
@@ -113,15 +124,63 @@ function App() {
     }
   }
 
-  async function handleDeleteChat() {
-    if (!workspace.selectedChatId) return
-    if (!window.confirm('Delete selected chat?')) return
+  async function handleCreateChat(event) {
+    event.preventDefault()
+    await createChatWithFeedback(newChatTitle)
+  }
+
+  async function handleQuickCreateChat() {
+    await createChatWithFeedback(newChatTitle)
+  }
+
+  async function handleRenameChat(chatId, title) {
+    setLoading(true)
+    clearFeedback()
+    try {
+      await workspace.renameChat(chatId, title)
+      setNotice('Chat renamed')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDeleteChat(chatId) {
+    if (!chatId) return
+    setLoading(true)
+    clearFeedback()
+    try {
+      await workspace.deleteChat(chatId)
+      setNotice('Chat deleted')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleRenameProject(projectId, title) {
+    setLoading(true)
+    clearFeedback()
+    try {
+      await workspace.renameProject(projectId, title)
+      setNotice('Project renamed')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDeleteProject(projectId) {
+    if (!projectId) return
 
     setLoading(true)
     clearFeedback()
     try {
-      await workspace.deleteChat(workspace.selectedChatId)
-      setNotice('Chat deleted')
+      await workspace.deleteProject(projectId)
+      setNotice('Project deleted')
     } catch (e) {
       setError(e.message)
     } finally {
@@ -204,10 +263,17 @@ function App() {
           selectedProjectId={workspace.selectedProjectId}
           setSelectedProjectId={workspace.setSelectedProjectId}
           projects={workspace.projects}
+          onRenameProject={handleRenameProject}
+          onDeleteProject={handleDeleteProject}
           newChatTitle={newChatTitle}
           setNewChatTitle={setNewChatTitle}
           onCreateChat={handleCreateChat}
+          onQuickCreateChat={handleQuickCreateChat}
           chats={workspace.chats}
+          onRenameChat={handleRenameChat}
+          onDeleteChat={handleDeleteChat}
+          chatSearchQuery={chatSearchQuery}
+          setChatSearchQuery={setChatSearchQuery}
           selectedChatId={workspace.selectedChatId}
           setSelectedChatId={workspace.setSelectedChatId}
           onLogout={handleLogout}
@@ -238,7 +304,6 @@ function App() {
         newMessageContent={newMessageContent}
         setNewMessageContent={setNewMessageContent}
         onSendUserMessage={handleSendUserMessage}
-        onDeleteChat={handleDeleteChat}
         error={error}
         notice={notice}
         onOpenSidebar={() => setSidebarOpen(true)}

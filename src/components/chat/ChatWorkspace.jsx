@@ -1,6 +1,35 @@
 import { FeedbackBanner } from '../common/FeedbackBanner'
 import { MessageList } from './MessageList'
 
+function ThemeLightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6M18.7 18.7l-1.6-1.6M6.9 6.9L5.3 5.3"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  )
+}
+
+function ThemeDarkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M19.5 15.1a8.5 8.5 0 1 1-10.6-10.6 7 7 0 1 0 10.6 10.6z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  )
+}
+
 export function ChatWorkspace({
   selectedChatId,
   selectedChatTitle,
@@ -24,7 +53,6 @@ export function ChatWorkspace({
   newMessageContent,
   setNewMessageContent,
   onSendUserMessage,
-  onDeleteChat,
   error,
   notice,
   onOpenSidebar,
@@ -37,8 +65,8 @@ export function ChatWorkspace({
         <button type="button" className="menu-btn" onClick={onOpenSidebar}>☰</button>
         <div className="chat-title">{selectedChatId ? (selectedChatTitle || 'Чат') : 'ChatGPT 5.2'}</div>
         <div className="header-actions">
-          <button type="button" className="theme-btn" onClick={onToggleTheme}>
-            {theme === 'dark' ? '☀︎' : '☾'}
+          <button type="button" className="theme-btn" onClick={onToggleTheme} title="Переключить тему">
+            {theme === 'dark' ? <ThemeLightIcon /> : <ThemeDarkIcon />}
           </button>
           <button
             type="button"
@@ -48,7 +76,6 @@ export function ChatWorkspace({
           >
             {(me?.username || me?.email || 'U').charAt(0).toUpperCase()}
           </button>
-          <button type="button" className="danger-btn" onClick={onDeleteChat} disabled={disabledActions}>Удалить</button>
         </div>
       </header>
 

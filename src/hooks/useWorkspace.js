@@ -20,6 +20,8 @@ export function useWorkspace({ token, enabled }) {
   const streamControllerRef = useRef(null)
   const typingTimerRef = useRef(null)
   const pendingDeltaRef = useRef('')
+  const lastChatsRefreshAtRef = useRef(0)
+  const chatsRefreshInFlightRef = useRef(false)
 
   function resetWorkspace() {
     setProjects([])
@@ -46,6 +48,28 @@ export function useWorkspace({ token, enabled }) {
     setProjects((prev) => [created, ...prev])
     setSelectedProjectId(created.projectId)
     return created
+  }
+
+  async function renameProject(projectId, title) {
+    await apiRequest(`/api/projects/${projectId}`, {
+      method: 'PATCH',
+      token,
+      body: { title },
+    })
+    await loadProjects()
+  }
+
+  async function deleteProject(projectId) {
+    await apiRequest(`/api/projects/${projectId}`, { method: 'DELETE', token })
+
+    if (selectedProjectId === projectId) {
+      setSelectedProjectId('personal')
+      setSelectedChatId('')
+      setMessages([])
+      setMessagesByDay([])
+    }
+
+    await loadProjects()
   }
 
   async function loadChats() {
@@ -99,6 +123,12 @@ export function useWorkspace({ token, enabled }) {
     await loadChats()
   }
 
+  async function chatHasMessages(chatId) {
+    if (!chatId) return false
+    const list = await apiRequest(`/api/chats/${chatId}/messages`, { method: 'GET', token })
+    return Array.isArray(list) && list.length > 0
+  }
+
   async function loadMessages(chatId) {
     if (!chatId) {
       setMessages([])
@@ -137,6 +167,7 @@ export function useWorkspace({ token, enabled }) {
     setStreamPreview('')
     pendingDeltaRef.current = ''
     startTypingTicker()
+    maybeRefreshChatsTitle(true)
 
     try {
       await streamGenerate({
@@ -146,17 +177,34 @@ export function useWorkspace({ token, enabled }) {
         systemPrompt,
         onDelta: (delta) => {
           pendingDeltaRef.current += delta
+          maybeRefreshChatsTitle()
         },
         signal: controller.signal,
       })
 
       await waitForPendingDelta(3000)
       await loadMessages(chatId)
+      maybeRefreshChatsTitle(true)
     } finally {
       stopTypingTicker()
       streamControllerRef.current = null
       setStreaming(false)
     }
+  }
+
+  function maybeRefreshChatsTitle(force = false) {
+    const now = Date.now()
+    if (!force && now - lastChatsRefreshAtRef.current < 1200) return
+    if (chatsRefreshInFlightRef.current) return
+
+    lastChatsRefreshAtRef.current = now
+    chatsRefreshInFlightRef.current = true
+
+    loadChats()
+      .catch(() => {})
+      .finally(() => {
+        chatsRefreshInFlightRef.current = false
+      })
   }
 
   function stopStream() {
@@ -249,10 +297,13 @@ export function useWorkspace({ token, enabled }) {
     streamPreview,
     loadProjects,
     createProject,
+    renameProject,
+    deleteProject,
     loadChats,
     createChat,
     renameChat,
     deleteChat,
+    chatHasMessages,
     loadMessages,
     sendUserMessage,
     generateStream,
