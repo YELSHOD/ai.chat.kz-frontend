@@ -109,7 +109,7 @@ export function Sidebar({
       <div className="sidebar-top">
         <div className="brand-row">
           <span className="brand-logo">✦</span>
-          <span className="brand-text">ChatGPT</span>
+          <span className="brand-text">AI.CHAT.KZ</span>
         </div>
         <button type="button" className="ghost-btn" onClick={onCloseMobile}>✕</button>
       </div>

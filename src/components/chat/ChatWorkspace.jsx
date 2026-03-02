@@ -120,7 +120,7 @@ export function ChatWorkspace({
               onSendUserMessage()
             }
           }}
-          placeholder="Спросите ChatGPT"
+          placeholder="Спросите AI.CHAT.KZ"
           maxLength={15000}
           disabled={!selectedChatId || streaming}
         />
