@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { apiRequest, streamGenerate } from '../api/client'
 
-export function useWorkspace({ token, enabled }) {
+export function useWorkspace({ request, streamRequest, enabled }) {
   const [projects, setProjects] = useState([])
   const [selectedProjectId, setSelectedProjectId] = useState('personal')
 
@@ -34,14 +33,13 @@ export function useWorkspace({ token, enabled }) {
   }
 
   async function loadProjects() {
-    const data = await apiRequest('/api/projects', { method: 'GET', token })
+    const data = await request('/api/projects', { method: 'GET' })
     setProjects(Array.isArray(data) ? data : [])
   }
 
   async function createProject(title) {
-    const created = await apiRequest('/api/projects', {
+    const created = await request('/api/projects', {
       method: 'POST',
-      token,
       body: { title },
     })
 
@@ -51,16 +49,15 @@ export function useWorkspace({ token, enabled }) {
   }
 
   async function renameProject(projectId, title) {
-    await apiRequest(`/api/projects/${projectId}`, {
+    await request(`/api/projects/${projectId}`, {
       method: 'PATCH',
-      token,
       body: { title },
     })
     await loadProjects()
   }
 
   async function deleteProject(projectId) {
-    await apiRequest(`/api/projects/${projectId}`, { method: 'DELETE', token })
+    await request(`/api/projects/${projectId}`, { method: 'DELETE' })
 
     if (selectedProjectId === projectId) {
       setSelectedProjectId('personal')
@@ -78,7 +75,7 @@ export function useWorkspace({ token, enabled }) {
         ? '/api/chats'
         : `/api/projects/${selectedProjectId}/chats`
 
-    const data = await apiRequest(path, { method: 'GET', token })
+    const data = await request(path, { method: 'GET' })
     const list = Array.isArray(data) ? data : []
     setChats(list)
 
@@ -93,9 +90,8 @@ export function useWorkspace({ token, enabled }) {
         ? '/api/chats'
         : `/api/projects/${selectedProjectId}/chats`
 
-    const created = await apiRequest(path, {
+    const created = await request(path, {
       method: 'POST',
-      token,
       body: { title: title?.trim() || null },
     })
 
@@ -105,16 +101,15 @@ export function useWorkspace({ token, enabled }) {
   }
 
   async function renameChat(chatId, title) {
-    await apiRequest(`/api/chats/${chatId}`, {
+    await request(`/api/chats/${chatId}`, {
       method: 'PATCH',
-      token,
       body: { title },
     })
     await loadChats()
   }
 
   async function deleteChat(chatId) {
-    await apiRequest(`/api/chats/${chatId}`, { method: 'DELETE', token })
+    await request(`/api/chats/${chatId}`, { method: 'DELETE' })
     if (selectedChatId === chatId) {
       setSelectedChatId('')
       setMessages([])
@@ -125,7 +120,7 @@ export function useWorkspace({ token, enabled }) {
 
   async function chatHasMessages(chatId) {
     if (!chatId) return false
-    const list = await apiRequest(`/api/chats/${chatId}/messages`, { method: 'GET', token })
+    const list = await request(`/api/chats/${chatId}/messages`, { method: 'GET' })
     return Array.isArray(list) && list.length > 0
   }
 
@@ -137,9 +132,9 @@ export function useWorkspace({ token, enabled }) {
     }
 
     if (groupByDay) {
-      const grouped = await apiRequest(
+      const grouped = await request(
         `/api/chats/${chatId}/messages/by-day?from=${encodeURIComponent(fromDate)}&to=${encodeURIComponent(toDate)}&tz=Asia/Almaty`,
-        { method: 'GET', token },
+        { method: 'GET' },
       )
 
       const normalized = Array.isArray(grouped) ? grouped : []
@@ -148,7 +143,7 @@ export function useWorkspace({ token, enabled }) {
       return
     }
 
-    const list = await apiRequest(`/api/chats/${chatId}/messages`, { method: 'GET', token })
+    const list = await request(`/api/chats/${chatId}/messages`, { method: 'GET' })
     const normalized = Array.isArray(list) ? list : []
     setMessages(normalized)
     setMessagesByDay([])
@@ -170,9 +165,8 @@ export function useWorkspace({ token, enabled }) {
     maybeRefreshChatsTitle(true)
 
     try {
-      await streamGenerate({
+      await streamRequest({
         chatId,
-        token,
         prompt,
         systemPrompt,
         onDelta: (delta) => {
