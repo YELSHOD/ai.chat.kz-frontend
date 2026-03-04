@@ -26,9 +26,15 @@ export function Sidebar({
   onCloseMobile,
 }) {
   const searchInputRef = useRef(null)
+  const projectsListRef = useRef(null)
+  const chatsListRef = useRef(null)
   const [openMenu, setOpenMenu] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
   const [deletingItem, setDeletingItem] = useState(null)
+  const [scrollableLists, setScrollableLists] = useState({
+    projects: false,
+    chats: false,
+  })
   const normalizedSearchQuery = chatSearchQuery.trim().toLowerCase()
 
   const visibleChats = useMemo(() => {
@@ -47,6 +53,28 @@ export function Sidebar({
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    function hasOverflow(element) {
+      if (!element) return false
+      return element.scrollHeight > element.clientHeight + 1
+    }
+
+    function updateScrollableState() {
+      const nextProjects = hasOverflow(projectsListRef.current)
+      const nextChats = hasOverflow(chatsListRef.current)
+
+      setScrollableLists((prev) => {
+        if (prev.projects === nextProjects && prev.chats === nextChats) return prev
+        return { projects: nextProjects, chats: nextChats }
+      })
+    }
+
+    updateScrollableState()
+    window.addEventListener('resize', updateScrollableState)
+
+    return () => window.removeEventListener('resize', updateScrollableState)
+  }, [projects, visibleChats, openMenu, editingItem, deletingItem])
 
   function menuKey(type, id) {
     return `${type}:${id}`
@@ -144,7 +172,10 @@ export function Sidebar({
           <button type="submit" disabled={loading}>+</button>
         </form>
 
-        <div className="stack-list">
+        <div
+          ref={projectsListRef}
+          className={scrollableLists.projects ? 'stack-list is-scrollable' : 'stack-list'}
+        >
           <button
             className={selectedProjectId === 'personal' ? 'stack-item active' : 'stack-item'}
             type="button"
@@ -225,7 +256,10 @@ export function Sidebar({
           <button type="submit" disabled={loading}>+</button>
         </form>
 
-        <div className="stack-list">
+        <div
+          ref={chatsListRef}
+          className={scrollableLists.chats ? 'stack-list is-scrollable' : 'stack-list'}
+        >
           {visibleChats.map((chat) => {
             const key = menuKey('chat', chat.chatId)
             const editing = isEditing('chat', chat.chatId)

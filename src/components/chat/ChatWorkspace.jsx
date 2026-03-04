@@ -55,6 +55,8 @@ export function ChatWorkspace({
   onSendUserMessage,
   error,
   notice,
+  sidebarCollapsed,
+  onToggleSidebar,
   onOpenSidebar,
 }) {
   const disabledActions = !selectedChatId || loading || streaming
@@ -63,7 +65,16 @@ export function ChatWorkspace({
     <main className="chat-shell">
       <header className="chat-header">
         <button type="button" className="menu-btn" onClick={onOpenSidebar}>☰</button>
-        <div className="chat-title">{selectedChatId ? (selectedChatTitle || 'Чат') : 'ChatGPT 5.2'}</div>
+        <button
+          type="button"
+          className="sidebar-toggle-btn"
+          onClick={onToggleSidebar}
+          title={sidebarCollapsed ? 'Показать сайдбар' : 'Скрыть сайдбар'}
+          aria-label={sidebarCollapsed ? 'Показать сайдбар' : 'Скрыть сайдбар'}
+        >
+          {sidebarCollapsed ? '☰' : '◧'}
+        </button>
+        <div className="chat-title">{selectedChatId ? (selectedChatTitle || 'Чат') : 'AI.CHAT.KZ 1.0'}</div>
         <div className="header-actions">
           <button type="button" className="theme-btn" onClick={onToggleTheme} title="Переключить тему">
             {theme === 'dark' ? <ThemeLightIcon /> : <ThemeDarkIcon />}

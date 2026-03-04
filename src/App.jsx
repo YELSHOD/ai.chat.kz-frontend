@@ -67,6 +67,7 @@ function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const selectedChat = useMemo(
     () => workspace.chats.find((chat) => chat.chatId === workspace.selectedChatId),
@@ -81,6 +82,17 @@ function App() {
       setSidebarOpen(false)
     }
   }, [workspace.selectedChatId])
+
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth <= 1024) {
+        setSidebarCollapsed(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -350,7 +362,7 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={sidebarCollapsed ? 'app-shell sidebar-collapsed' : 'app-shell'}>
       <div className={`sidebar-layer ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
 
       <div className={`sidebar-wrap ${sidebarOpen ? 'open' : ''}`}>
@@ -406,6 +418,8 @@ function App() {
         onSendUserMessage={handleSendUserMessage}
         error={error}
         notice={notice}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
         onOpenSidebar={() => setSidebarOpen(true)}
       />
     </div>
